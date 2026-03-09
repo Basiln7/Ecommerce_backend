@@ -1,0 +1,9 @@
+fastapi 
+uvicorn
+sqlalchemy
+pydantic
+pydantic-settings
+fastapi-mail
+python-multipart
+psycopg2-binary
+python-jose
