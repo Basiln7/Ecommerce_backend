@@ -1,10 +1,11 @@
 from fastapi import FastAPI,Form,UploadFile,File,Depends,HTTPException
 from sqlalchemy.orm import session
+from jose import jwt,JWTError
 from app.db.session import get_db
 from app.models.table import User,Products,Cart
 from app.schemas.auth  import Login,UserOut
 from app.schemas.product import ProdectOut,UpdateProduct,CartAdd,CartOut
-from app.core.security import create_token,verify_token
+from app.core.security import create_access_token,verify_token,create_refresh_token,verify_refresh_token
 from typing import List
 from fastapi.staticfiles import StaticFiles
 import os,random
@@ -19,6 +20,14 @@ app.mount("/user_img",StaticFiles(directory=UPLOAD_DIR),name="user_img")
 @app.get("/")
 def check():
     return {"sever":"run successfully"}
+@app.post("/refresh")
+def get_new_access_token(token:str,db:session=Depends(get_db)):
+    create_token=verify_refresh_token(token)
+    if not create_token:
+        raise HTTPException(status_code=401,detail="invalid token")
+    new_token=create_access_token({"sub":create_token["sub"]},db)
+    return{"access_token":new_token,"token_type":"bearer"}
+    
 @app.post("/signup",tags=["auth"])
 async def rejister(name:str=Form(...),
              email:str=Form(...),
@@ -70,9 +79,11 @@ def login(data:Login,db:session=Depends(get_db)):
         raise HTTPException(status_code=401,detail="email not  founr")
     if data.password!=user.password:
         raise HTTPException(status_code=401,detail="wrong password")
-    token=create_token({"sub":data.email},db)
+    token=create_access_token({"sub":data.email},db)
+    refresh_token=create_refresh_token({"sub":data.email},db)
     return{"token":token,
-           "token_type":"beare"}
+           "refresh_token":refresh_token,
+           "token_type":"bearer"}
 
 @app.get("/view_users",response_model=List[UserOut],tags=["auth"])
 def view_users(db:session=Depends(get_db)):
@@ -97,6 +108,7 @@ async def add_product(name:str=Form(...),
     db.add(new_product)
     db.commit()
     return{"product":"added succesfully"}
+    
 @app.put("/update_product",tags=["product"])
 def update_product(data:UpdateProduct,db:session=Depends(get_db),token:dict=Depends(verify_token)):
     product=db.query(Products).filter(data.product_name==Products.product_name).first()

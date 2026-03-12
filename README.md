@@ -16,8 +16,8 @@ The project build for my skill development its an ecommers backend product curd 
 ## Installation
 1. Clone repository
 ```bash
-   git clone https://github.com/yourusername/crm-backend.git
-   cd crm-backend
+   git clone https://github.com/Basiln7/Ecommerce_backend.git
+   cd Ecommerce_backend
 
 ```
 
